@@ -1,0 +1,62 @@
+version: '3.2'
+
+services:
+  eventapi:
+    # build: .  # Path to the directory containing the Dockerfile
+    image: "startup2023/oeapi:dev-latest"
+    ports:
+      - "${NESTJS_PORT}:${NESTJS_PORT}"
+    depends_on:
+      - database
+    volumes:
+      - ./:/usr/src/app  # Replace with the path where your NestJS app should store persistent data
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    env_file:
+      - .env
+    networks:
+      - myoeapi_network 
+    restart: always
+  
+  database:
+    image: "postgres:13"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    volumes:
+      - data_database:/var/lib/postgresql/data  
+    networks:
+      - myoeapi_network
+    restart: always
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - myoeapi_network
+  
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    networks:
+      - myoeapi_network
+  
+volumes:
+  data_database:
+
+networks:
+  myoeapi_network:
+    driver: bridge
