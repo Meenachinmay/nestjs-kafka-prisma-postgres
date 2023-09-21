@@ -1,3 +1,6 @@
+// import { EventEmitter } from 'events';
+// EventEmitter.prototype.setMaxListeners(50);
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
